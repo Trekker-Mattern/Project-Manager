@@ -2,16 +2,16 @@ import subprocess
 from pathlib import Path
 
 listOfValidIDEs = ["Neovim", "VSCode", "Intellij"]
+scriptDir = Path(__file__).parent
 
 
 def main():
 
     try:
-        file = open("projectlist.TMDL", 'r')
+        file = open(f"{scriptDir}/projectlist.TMDL", 'r')
     except FileNotFoundError:
         print(FileNotFoundError)
-        open("projectlist.TMDL", 'x')
-        file = open("projectlist.TMDL", 'r')
+        file = open(f"{scriptDir}projectlist.TMDL", 'x')
 
     projectList = file.readlines()
     file.close()
