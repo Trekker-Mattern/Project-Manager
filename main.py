@@ -1,3 +1,4 @@
+import heapq
 import subprocess
 from pathlib import Path
 
@@ -42,7 +43,7 @@ def addProject(projectList: list[str]):
 
     projectList.append(f"{projName},{projPath},{projIDE}")
 
-    file = open("projectlist.TMDL", 'w')
+    file = open(f"{scriptDir}projectlist.TMDL", 'w')
     for project in projectList:
         _ = file.write(project + "\n")
     file.close()
@@ -77,12 +78,17 @@ def menu(projectList: list[str]):
                     addProject(projectList)
                 case "remove project":
                     removeProject(projectList)
-                case _:
+                case "open project":
                     openProject(projectList)
                     return
+                case _:
+                    openProjectThroughSubstring(projectList, userInput)
 
 
-def openProject(projectList: list[str]):
+def openProject(projectList: list[str], projectToOpen: str = ""):
+
+    openProjectThroughSubstring(projectList, projectToOpen)
+
     print("These are your saved projects:")
     for p in projectList:
         print(p.split(",")[0])
@@ -102,6 +108,55 @@ def openProject(projectList: list[str]):
         if projectName == requestedProject:
             print("Found Suitable Project")
             openIDE(projectPath, projectIDE)
+
+
+def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = ""):
+
+    if projectToOpen == "":
+        return
+
+    possibleVals: dict[str, str] = {}
+    for p in projectList:
+        pSplit = p.split(",")[0]
+        if projectToOpen in pSplit:
+            possibleVals[p.split(",")[0]] = p
+
+    if len(possibleVals) == 0:
+        return
+    if len(possibleVals) == 1:
+        pvals: list[str] = list(possibleVals.values())
+        openIDE(pvals[0].split(",")[1].strip(), pvals[0].split(",")[2].strip())
+        return
+
+    matchingProj: tuple[int, str] = assessCloseness(possibleVals, projectToOpen)
+    fullMatchingProject = possibleVals[matchingProj[1]]
+    path = fullMatchingProject.split(",")[1]
+    projectIDE = fullMatchingProject.split(",")[2]
+
+    openIDE(path, projectIDE)
+    return
+
+
+def assessCloseness(vals: dict[str, str], uInput: str):
+
+    priorityQueue: list[tuple[int, str]] = []
+    listOfVals: list[str] = list(vals.values())
+    for val in listOfVals:
+        heapq.heappush(priorityQueue, (assessWordCloseness(val, uInput), val))
+
+    return heapq.heappop(priorityQueue)
+
+
+def assessWordCloseness(word1, word2):
+    score: int = 0
+    index: int = 0
+    for letter in word1:
+        if index >= len(word2):
+            return score
+
+        score += abs(ord(letter) - ord(word2[index]))
+        index += 1
+    return score
 
 
 def openIDE(path: str, IDE: str):
