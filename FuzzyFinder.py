@@ -1,6 +1,5 @@
 import heapq
 from math import sqrt
-from operator import le
 
 keyboardLocations = {
         'q': (2, 0), 'w': (2, 1), 'e': (2, 2), 'r': (2, 3), 't': (2, 4),
@@ -46,12 +45,12 @@ def assessWordCloseness(word1: str, word2: str) -> float:
             keyboardLocations[word2[index]]
         except KeyError:
             print(letter, word2[index])
+            index+=1
             continue
 
         if index == 0 and letter == word2[0]:
-            print("firstletterMATCH")
             score -= 10
-        # distanceOnKeyboard
+
         distanceScore += distance(keyboardLocations[letter], keyboardLocations[word2[index]])
         index += 1
 
