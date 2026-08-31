@@ -1,6 +1,7 @@
-import heapq
 import subprocess
+import sys
 from pathlib import Path
+import FuzzyFinder
 
 listOfValidIDEs = ["Neovim", "VSCode", "Intellij"]
 scriptDir = Path(__file__).parent
@@ -8,17 +9,31 @@ scriptDir = Path(__file__).parent
 
 def main():
 
+
+    print("Opening ProjectList.TMDL")
+    print(f"Expecting projectlist.TMDL to be at {scriptDir}/projectlist.TMDL")
+
     try:
         file = open(f"{scriptDir}/projectlist.TMDL", 'r')
+        print("Opened Successfully!")
     except FileNotFoundError:
+        print("Couldnt Find File...")
+        print("Creating file...")
         print(FileNotFoundError)
-        file = open(f"{scriptDir}projectlist.TMDL", 'x')
-
+        file = open(f"{scriptDir}/projectlist.TMDL", 'x')
+        print("File created!")
+ 
     projectList = file.readlines()
     file.close()
+
+    print(len(sys.argv))
+    if not len(sys.argv) == 1:
+        openProjectByName(projectList, sys.argv[1]) 
+        return
+
     menu(projectList)
 
-
+#Open The IDE
 def openNeovim(path: str):
     bat = Path(__file__).parent / "openNeovim.bat"
     _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
@@ -29,7 +44,29 @@ def openVSCode(path: str):
     _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
 
 
+def validateIDE(IDEStr: str):
+    if IDEStr in listOfValidIDEs:
+        return True
+    return False
+
+
+def openIDE(path: str, IDE: str):
+    print("Opening IDE")
+    match IDE:
+        case "Neovim":
+            openNeovim(path)
+            return
+        case "VSCode":
+            openVSCode(path)
+            return
+        case _:
+            print("No proper IDE found")
+            pass
+
+
 def addProject(projectList: list[str]):
+    """Add Project To the File and the List"""
+
     projName = input("What is the name of the project you would like to add?    ").strip()
     projPath = input("What is the PATH of the project?    ").strip()
     projIDE = input("Which IDE would you like to use for this project?    ").strip()
@@ -42,17 +79,32 @@ def addProject(projectList: list[str]):
         return
 
     projectList.append(f"{projName},{projPath},{projIDE}")
+    writeListToFile(projectList)
 
+   
+
+def removeProject(projectList: list[str]):
+    """Remove Project from file and list"""
+
+    project = input("Which project would you like to remove?")
+    project = project.strip().lower()
+    pname: list[str] = list(map(lambda p: p.strip().split(",")[0], projectList))
+
+    if project in pname:
+        _ = projectList.pop(pname.index(project))
+        print(f"Project \'{project}\' Removed Successfully")
+        writeListToFile(projectList)
+        return True
+
+    print(f"Project \'{project}\' was unable to be removed")
+    return False
+
+def writeListToFile(projectList):
     file = open(f"{scriptDir}projectlist.TMDL", 'w')
     for project in projectList:
-        _ = file.write(project + "\n")
+         _ = file.write(project + "\n")
     file.close()
-
-
-def validateIDE(IDEStr: str):
-    if IDEStr in listOfValidIDEs:
-        return True
-    return False
+   
 
 
 def menu(projectList: list[str]):
@@ -84,8 +136,16 @@ def menu(projectList: list[str]):
                 case _:
                     openProjectThroughSubstring(projectList, userInput)
 
-
+# Open Project based on the project list and a string
+# Project to open is a default empty string
 def openProject(projectList: list[str], projectToOpen: str = ""):
+
+    """
+    Open a project based on project list and a string
+    projectToOpen is a parameter with the default str of ""
+    if a string is passed in the program will attempt to open the project using that string first
+    """
+
 
     openProjectThroughSubstring(projectList, projectToOpen)
 
@@ -111,15 +171,23 @@ def openProject(projectList: list[str], projectToOpen: str = ""):
 
 
 def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = ""):
+    """
+    Uses Trekkers FuzzyFinder algorithm to get the "closest" string
+    Input: projectList, projectToOpen(could be empty string as default)
+    Return: No return but should Successfully open an IDE 
+    """
+
+    possibleVals: dict[str, str] = {}
 
     if projectToOpen == "":
         return
 
-    possibleVals: dict[str, str] = {}
+    #check each value in the list to see if it is a substring
+    #if so, add to the dict with the <full-path:value> and <key:name>
     for p in projectList:
         pSplit = p.split(",")[0]
         if projectToOpen in pSplit:
-            possibleVals[p.split(",")[0]] = p
+            possibleVals[p.split(",")[0].lower()] = p
 
     if len(possibleVals) == 0:
         return
@@ -128,8 +196,9 @@ def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = "")
         openIDE(pvals[0].split(",")[1].strip(), pvals[0].split(",")[2].strip())
         return
 
-    matchingProj: tuple[int, str] = assessCloseness(possibleVals, projectToOpen)
+    matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(list(possibleVals.keys()), projectToOpen)
     fullMatchingProject = possibleVals[matchingProj[1]]
+
     path = fullMatchingProject.split(",")[1]
     projectIDE = fullMatchingProject.split(",")[2]
 
@@ -137,51 +206,26 @@ def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = "")
     return
 
 
-def assessCloseness(vals: dict[str, str], uInput: str):
+# TODO: do a,b,c = str.split()
+def openProjectByName(projectList: list[str], matchedStr: str):
+    """For use in bypassing the inputs in the terminal"""
 
-    priorityQueue: list[tuple[int, str]] = []
-    listOfVals: list[str] = list(vals.values())
-    for val in listOfVals:
-        heapq.heappush(priorityQueue, (assessWordCloseness(val, uInput), val))
+    projectNameList: list[str] = []
 
-    return heapq.heappop(priorityQueue)
+    if matchedStr == "": return
 
+    for p in projectList:
 
-def assessWordCloseness(word1, word2):
-    score: int = 0
-    index: int = 0
-    for letter in word1:
-        if index >= len(word2):
-            return score
-
-        score += abs(ord(letter) - ord(word2[index]))
-        index += 1
-    return score
-
-
-def openIDE(path: str, IDE: str):
-    print("Opening IDE")
-    match IDE:
-        case "Neovim":
-            openNeovim(path)
+        if p.split(",")[0].lower() == matchedStr.lower():
+            openIDE(p.split(',')[1].strip(), p.split(',')[2].strip())
             return
-        case "VSCode":
-            openVSCode(path)
-            return
-        case _:
-            print("No proper IDE found")
-            pass
+        projectNameList.append(p.split(',')[0].lower())
+    matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, matchedStr.lower())
+    fullMatchingProject =  projectList[projectNameList.index(matchingProj[1].lower())]
 
-
-def removeProject(projectList: list[str]):
-    project = input("Which project would you like to remove?")
-    project = project.strip().lower()
-    pname: list[str] = list(map(lambda p: p.strip().split(",")[0], projectList))
-    if project in pname:
-        _ = projectList.pop(pname.index(project))
-        print(f"Project \'{project}\' Removed Successfully")
-        return True
-    return False
-
+    path = fullMatchingProject.split(",")[1].strip()
+    projectIDE = fullMatchingProject.split(",")[2].strip()
+    openIDE(path, projectIDE)
+    return
 
 main()
