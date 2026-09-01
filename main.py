@@ -94,10 +94,10 @@ def removeProject(projectList: list[str]):
         _ = projectList.pop(pname.index(project))
         print(f"Project \'{project}\' Removed Successfully")
         writeListToFile(projectList)
-        return True
+        return
 
     print(f"Project \'{project}\' was unable to be removed")
-    return False
+    return
 
 def writeListToFile(projectList: list[str]):
     file = open(f"{scriptDir}projectlist.TMDL", 'w')
@@ -167,20 +167,21 @@ def openProject(projectList: list[str], projectToOpen: str = "") -> None:
 
         print(f"checking {projectName} vs {requestedProject}, {projectName == requestedProject}")
 
-        if projectName == requestedProject:
+        if projectName.lower() == requestedProject.lower():
             print("Found Suitable Project")
             openIDE(projectPath, projectIDE)
         else:
             projectNameList.append(projectName)
 
-        matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, requestedProject)
-        fullMatchingProject = projectList[projectNameList.index(matchingProj[1])]
+    #final guess and opening of project
+    matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, requestedProject)
+    fullMatchingProject = projectList[projectNameList.index(matchingProj[1])]
 
-        path = fullMatchingProject.split(",")[1]
-        projectIDE = fullMatchingProject.split(",")[2]
+    _, path, projectIDE = fullMatchingProject.split(",")
+    print(f"OPENING {path}, WITH IDE {projectIDE}")
+    openIDE(path.strip(), projectIDE.strip())
+    return
 
-        openIDE(path, projectIDE)
-        return
 
 def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = ""):
     """
@@ -238,7 +239,7 @@ def openProjectByName(projectList: list[str], matchedStr: str):
     matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, matchedStr.lower())
     fullMatchingProject =  projectList[projectNameList.index(matchingProj[1].lower())]
 
-    path, projectIDE = fullMatchingProject.split(",")
+    _, path, projectIDE = fullMatchingProject.split(",")
     openIDE(path.strip(), projectIDE.strip())
     return
 
