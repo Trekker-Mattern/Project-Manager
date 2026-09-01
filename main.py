@@ -99,7 +99,7 @@ def removeProject(projectList: list[str]):
     print(f"Project \'{project}\' was unable to be removed")
     return False
 
-def writeListToFile(projectList):
+def writeListToFile(projectList: list[str]):
     file = open(f"{scriptDir}projectlist.TMDL", 'w')
     for project in projectList:
          _ = file.write(project + "\n")
@@ -138,12 +138,14 @@ def menu(projectList: list[str]):
 
 # Open Project based on the project list and a string
 # Project to open is a default empty string
-def openProject(projectList: list[str], projectToOpen: str = ""):
+def openProject(projectList: list[str], projectToOpen: str = "") -> None:
 
     """
     Open a project based on project list and a string
     projectToOpen is a parameter with the default str of ""
     if a string is passed in the program will attempt to open the project using that string first
+    then it checks for exact equality based on a user prompt
+    then it opens the closest using the fuzzy finder
     """
 
 
@@ -153,22 +155,32 @@ def openProject(projectList: list[str], projectToOpen: str = ""):
     for p in projectList:
         print(p.split(",")[0])
 
+    projectNameList: list[str]= []
+
     requestedProject = input("Which project would you like to open?    ")
     requestedProject = requestedProject.strip().lower()
+
     print(f"Opening {requestedProject}")
     for project in projectList:
-        splitProject = project.split(",")
 
-        projectName = splitProject[0].strip().lower()
-        projectPath = splitProject[1]
-        projectIDE = splitProject[2].strip()
-        assert '\n' not in projectIDE
+        projectName, projectPath, projectIDE = project.split(",")
+
         print(f"checking {projectName} vs {requestedProject}, {projectName == requestedProject}")
 
         if projectName == requestedProject:
             print("Found Suitable Project")
             openIDE(projectPath, projectIDE)
+        else:
+            projectNameList.append(projectName)
 
+        matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, requestedProject)
+        fullMatchingProject = projectList[projectNameList.index(matchingProj[1])]
+
+        path = fullMatchingProject.split(",")[1]
+        projectIDE = fullMatchingProject.split(",")[2]
+
+        openIDE(path, projectIDE)
+        return
 
 def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = ""):
     """
@@ -193,14 +205,14 @@ def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = "")
         return
     if len(possibleVals) == 1:
         pvals: list[str] = list(possibleVals.values())
-        openIDE(pvals[0].split(",")[1].strip(), pvals[0].split(",")[2].strip())
+        pPath, pIDE = (pvals[0].split(","))
+        openIDE(pPath.strip(), pIDE.strip())
         return
 
     matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(list(possibleVals.keys()), projectToOpen)
     fullMatchingProject = possibleVals[matchingProj[1]]
 
-    path = fullMatchingProject.split(",")[1]
-    projectIDE = fullMatchingProject.split(",")[2]
+    path, projectIDE = fullMatchingProject.split(",")
 
     openIDE(path, projectIDE)
     return
@@ -219,13 +231,15 @@ def openProjectByName(projectList: list[str], matchedStr: str):
         if p.split(",")[0].lower() == matchedStr.lower():
             openIDE(p.split(',')[1].strip(), p.split(',')[2].strip())
             return
+
         projectNameList.append(p.split(',')[0].lower())
+
+
     matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, matchedStr.lower())
     fullMatchingProject =  projectList[projectNameList.index(matchingProj[1].lower())]
 
-    path = fullMatchingProject.split(",")[1].strip()
-    projectIDE = fullMatchingProject.split(",")[2].strip()
-    openIDE(path, projectIDE)
+    path, projectIDE = fullMatchingProject.split(",")
+    openIDE(path.strip(), projectIDE.strip())
     return
 
 main()
