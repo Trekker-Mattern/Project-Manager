@@ -1,2 +1,1 @@
-cd $1
-code .
+code $1 

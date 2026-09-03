@@ -2,10 +2,11 @@ import subprocess
 import sys
 from pathlib import Path
 import FuzzyFinder
+import platform
 
 listOfValidIDEs = ["Neovim", "VSCode", "Intellij"]
 scriptDir = Path(__file__).parent
-
+current_os = platform.system()
 
 def main():
 
@@ -22,7 +23,9 @@ def main():
         print(FileNotFoundError)
         file = open(f"{scriptDir}/projectlist.TMDL", 'x')
         print("File created!")
- 
+        file.close()
+        file = open(f"{scriptDir}/projectlist.TMDL", 'r')
+
     projectList = file.readlines()
     file.close()
 
@@ -35,13 +38,26 @@ def main():
 
 #Open The IDE
 def openNeovim(path: str):
-    bat = Path(__file__).parent / "openNeovim.bat"
-    _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
-
+    print("Opening Neovim")
+    if current_os == "Windows":
+        bat = Path(__file__).parent.resolve() / "openNeovim.bat"
+        _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
+    elif current_os == "Linux":
+        script = Path(__file__).parent.resolve() / "openNeovim.sh"
+        _ = subprocess.call(['bash',  str(script), str(path)])
+    else:
+        print("Error when attempting to open IDE.")
+        print("No valid operating system found")
 
 def openVSCode(path: str):
-    bat = Path(__file__).parent / "openVSCode.bat"
-    _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
+    print("Opening Windows")
+
+    if current_os == "Windows":
+        bat = Path(__file__).parent / "openVSCode.bat"
+        _ = subprocess.call(['cmd', '/c', str(bat), str(path)])
+    elif current_os == "Linux":
+        script = Path(__file__).parent / "openVSCode.sh"
+        _ = subprocess.call(['bash', str(script), str(path)])
 
 
 def validateIDE(IDEStr: str):
@@ -100,7 +116,7 @@ def removeProject(projectList: list[str]):
     return
 
 def writeListToFile(projectList: list[str]):
-    file = open(f"{scriptDir}projectlist.TMDL", 'w')
+    file = open(f"{scriptDir}/projectlist.TMDL", 'w')
     for project in projectList:
          _ = file.write(project + "\n")
     file.close()

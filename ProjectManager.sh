@@ -1,4 +1,6 @@
-scriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo $scriptDir
-python3 "$scriptDir/main.py"
+#!/bin/bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+python3 "$SCRIPT_DIR/main.py"
 
