@@ -68,6 +68,7 @@ def validateIDE(IDEStr: str):
 
 def openIDE(path: str, IDE: str):
     print("Opening IDE")
+    print(IDE)
     match IDE:
         case "Neovim":
             openNeovim(path)
@@ -164,8 +165,8 @@ def openProject(projectList: list[str], projectToOpen: str = "") -> None:
     then it opens the closest using the fuzzy finder
     """
 
-
-    openProjectThroughSubstring(projectList, projectToOpen)
+    if not projectToOpen == "":
+        openProjectByName(projectList, projectToOpen)
 
     print("These are your saved projects:")
     for p in projectList:
@@ -179,7 +180,7 @@ def openProject(projectList: list[str], projectToOpen: str = "") -> None:
     print(f"Opening {requestedProject}")
     for project in projectList:
 
-        projectName, projectPath, projectIDE = project.split(",")
+        projectName, projectPath, projectIDE = project.strip().split(",")
 
         print(f"checking {projectName} vs {requestedProject}, {projectName == requestedProject}")
 
@@ -193,47 +194,10 @@ def openProject(projectList: list[str], projectToOpen: str = "") -> None:
     matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, requestedProject)
     fullMatchingProject = projectList[projectNameList.index(matchingProj[1])]
 
-    _, path, projectIDE = fullMatchingProject.split(",")
+    _, path, projectIDE = fullMatchingProject.strip().split(",")
     print(f"OPENING {path}, WITH IDE {projectIDE}")
     openIDE(path.strip(), projectIDE.strip())
     return
-
-
-def openProjectThroughSubstring(projectList: list[str], projectToOpen: str = ""):
-    """
-    Uses Trekkers FuzzyFinder algorithm to get the "closest" string
-    Input: projectList, projectToOpen(could be empty string as default)
-    Return: No return but should Successfully open an IDE 
-    """
-
-    possibleVals: dict[str, str] = {}
-
-    if projectToOpen == "":
-        return
-
-    #check each value in the list to see if it is a substring
-    #if so, add to the dict with the <full-path:value> and <key:name>
-    for p in projectList:
-        pSplit = p.split(",")[0]
-        if projectToOpen in pSplit:
-            possibleVals[p.split(",")[0].lower()] = p
-
-    if len(possibleVals) == 0:
-        return
-    if len(possibleVals) == 1:
-        pvals: list[str] = list(possibleVals.values())
-        pPath, pIDE = (pvals[0].split(","))
-        openIDE(pPath.strip(), pIDE.strip())
-        return
-
-    matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(list(possibleVals.keys()), projectToOpen)
-    fullMatchingProject = possibleVals[matchingProj[1]]
-
-    path, projectIDE = fullMatchingProject.split(",")
-
-    openIDE(path, projectIDE)
-    return
-
 
 # TODO: do a,b,c = str.split()
 def openProjectByName(projectList: list[str], matchedStr: str):
@@ -245,17 +209,20 @@ def openProjectByName(projectList: list[str], matchedStr: str):
 
     for p in projectList:
 
-        if p.split(",")[0].lower() == matchedStr.lower():
-            openIDE(p.split(',')[1].strip(), p.split(',')[2].strip())
+        pName, pPath, pIDE = p.strip().split(',')
+        pName = pName.lower()
+
+        if pName == matchedStr.lower():
+            openIDE(pPath , pIDE)
             return
 
-        projectNameList.append(p.split(',')[0].lower())
+        projectNameList.append(pName)
 
 
     matchingProj: tuple[float, str] = FuzzyFinder.assessCloseness(projectNameList, matchedStr.lower())
     fullMatchingProject =  projectList[projectNameList.index(matchingProj[1].lower())]
 
-    _, path, projectIDE = fullMatchingProject.split(",")
+    _, path, projectIDE = fullMatchingProject.strip().split(",")
     openIDE(path.strip(), projectIDE.strip())
     return
 
