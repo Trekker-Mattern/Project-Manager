@@ -32,6 +32,7 @@ def main():
     print(len(sys.argv))
     if not len(sys.argv) == 1:
         openProjectByName(projectList, sys.argv[1]) 
+        print("Closing down")
         return
 
     menu(projectList)
@@ -152,6 +153,7 @@ def menu(projectList: list[str]):
                     return
                 case _:
                     openProjectByName(projectList, userInput)
+                    return
 
 # Open Project based on the project list and a string
 # Project to open is a default empty string
@@ -167,6 +169,7 @@ def openProject(projectList: list[str], projectToOpen: str = "") -> None:
 
     if not projectToOpen == "":
         openProjectByName(projectList, projectToOpen)
+        return
 
     print("These are your saved projects:")
     for p in projectList:
