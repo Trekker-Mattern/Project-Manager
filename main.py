@@ -151,7 +151,7 @@ def menu(projectList: list[str]):
                     openProject(projectList)
                     return
                 case _:
-                    openProjectThroughSubstring(projectList, userInput)
+                    openProjectByName(projectList, userInput)
 
 # Open Project based on the project list and a string
 # Project to open is a default empty string
