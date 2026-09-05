@@ -10,7 +10,17 @@ current_os = platform.system()
 
 def main():
 
+    
+    projectList = openTMDLFile()
+    print(len(sys.argv))
+    if not len(sys.argv) == 1:
+        openProjectByName(projectList, sys.argv[1]) 
+        print("Closing down")
+        return
 
+    menu(projectList)
+
+def openTMDLFile():
     print("Opening ProjectList.TMDL")
     print(f"Expecting projectlist.TMDL to be at {scriptDir}/projectlist.TMDL")
 
@@ -28,14 +38,9 @@ def main():
 
     projectList = file.readlines()
     file.close()
+    return projectList
 
-    print(len(sys.argv))
-    if not len(sys.argv) == 1:
-        openProjectByName(projectList, sys.argv[1]) 
-        print("Closing down")
-        return
 
-    menu(projectList)
 
 #Open The IDE
 def openNeovim(path: str):
