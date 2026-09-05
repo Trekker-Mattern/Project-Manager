@@ -123,6 +123,7 @@ def removeProject(projectList: list[str]):
     return
 
 def writeListToFile(projectList: list[str]):
+    """Opens 'ScriptDir/projectlist.TMDL' and writes all values from projectList into it"""
     file = open(f"{scriptDir}/projectlist.TMDL", 'w')
     for project in projectList:
          _ = file.write(project + "\n")
